@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
     name = 'pygres',
     packages = ['pygres'], # this must be the same as the name above
-    version = '0.1',
+    version = '1.0',
     description = 'Postgres simple driver',
     author = 'Rodrigo Gamba',
     author_email = 'gamba.lavin@gmail.com',
