@@ -34,7 +34,7 @@ Instantiating an entity and saving data
 ```python
 import db
 
-user = db.Model('<table>','<table_pk>')
+user = db.model('<table>','<table_pk>')
 user.name = "John"
 user.last_name = "Smith"
 user.age = 25
@@ -51,3 +51,52 @@ user.name = "Jane"
 user.age = 27
 user.save()
 ```
+
+#### Querying row
+To query a row form the instanced table that returns a dictionary with the format `{ 'column' : 'value', ... }` justo do:
+```python
+user.get(<id_user>)
+user_row = user.values
+```
+
+#### Quick querying multiple rows
+To execute any sql statement...
+```python
+q = db.query(
+    """
+    SELECT * from <table> WHERE <col> = %s
+    """,
+    (param,)
+)
+```
+To fetch rows as a list of dictionaries if any returned from the executed statement...
+```python
+rows = q.fetch()
+```
+The returned variable will be in the format
+```python
+[
+    {   
+        'id_row' : 1
+        'column1' : 'value',
+        'column2' : 'value'
+    },
+    {   
+        'id_row' : 2
+        'column1' : 'value',
+        'column2' : 'value'
+    }
+]
+```
+
+## Testing
+
+#### Postgres reqs for testing
+Prerequisites for testing:
+* Install PostgreSQL
+* Create database 'demo'
+* Create table 'test'
+  * id_test     [serial]
+  * name        [text]
+  * value       [text]
+  * date        [timestamp]

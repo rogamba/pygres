@@ -9,6 +9,7 @@ class Pygres(object):
     curs = None
     model = Model
     config = None
+    q = None
 
     def __init__(self, config):
         self.config = config
@@ -31,5 +32,25 @@ class Pygres(object):
             raise PygresError('Couldnt connect to Postgres','Missing')
             sys.exit()
 
+    def close(self):
+        self.conn.close()
+
     def model(self, table, pk, *initial_data,**kwargs):
         return Model(self, table, pk, *initial_data,**kwargs)
+
+    def query(self,statement,values=[]):
+        self.cur.execute(statement, values)
+        self.q = self.cur.query
+        self.conn.commit()
+        return self
+
+    def fetch(self):
+        columns = [desc[0] for desc in self.cur.description]
+        rows = self.cur.fetchall()
+        rows_list = []
+        for row in rows:
+            row_dict = {}
+            for i,col in enumerate(columns):
+                row_dict[col] = row[i]
+            rows_list.append(row_dict)
+        return rows_list

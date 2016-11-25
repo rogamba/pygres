@@ -2,8 +2,13 @@
 import datetime
 from psycopg2.extensions import AsIs
 
+'''
+Pgres table model, references a row in the reference table
+and query
+'''
 class Model(object):
     # db connections
+    pygres = None
     conn = None
     cur = None
     # global variables
@@ -17,6 +22,15 @@ class Model(object):
 
 
     def __init__(self, obj, table, pk, *initial_data,**kwargs):
+        '''
+        obj:    pygres instance containing the db connection and db cursor to query
+        table:  table reference from with to query
+        pk:     primary key field of the reference table
+        pkv:    primary key value
+        '''
+
+        # instantiate the object
+        self.pygres = obj
         # Instantiate the global variables
         self.conn = obj.conn
         self.cur = obj.cur
@@ -32,6 +46,12 @@ class Model(object):
         self.pk = self.primary_key
         self.pkv = self.primary_key_value
 
+        # Query properties
+        self.rows = None
+        self.result = None
+        self.qry = None
+        self.query = None
+
         # If initial_data and kwargs are empty, initialize columns with None value
         for col in self.columns:
             setattr(self, col, None)
@@ -44,21 +64,9 @@ class Model(object):
         for key in kwargs:
             setattr(self, key, kwargs[key])
 
-    # Standalone query
-    def query(self,qry,values):
-        self.cur.execute(statement, values)
-        self.qry = self.cur.query
-        return self
-
-    def run(self):
-        pass
-
-    def fetch(self):
-        # If we get only one record, new query with the id and instantiate the data
-        pass
 
     '''
-    Display the table field values of the current object
+    Display the column names and values of the current object
     '''
     @property
     def values(self):
@@ -78,25 +86,127 @@ class Model(object):
                 'column' : attr,
                 'value' : val
             })
-        print(ae_fields)
+        # If primary key is set, update else insert
         if self.__dict__[self.primary_key] != None and type(self.__dict__[self.primary_key]) == int:
-            # Primary key value
+            # Set primary key value
             self.pkv =  self.__dict__[self.primary_key]
-            # Join the attributes with a comma
+            # Build update query
             qry_fields = ", ".join([ field['column'] for field in ae_fields ])
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = "UPDATE  %s SET ("+ qry_fields +") = (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") WHERE %s = %s"
+            qry = "UPDATE  %s SET ("+ qry_fields +") = (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") WHERE %s = %s RETURNING %s"
         else:
-            # Attributes of object intersection with columns
+            # Build insert query
             qry_fields = ", ".join([ field['column'] for field in ae_fields ])
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = "INSERT INTO %s ("+ qry_fields +") VALUES (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ")"
+            qry = "INSERT INTO %s ("+ qry_fields +") VALUES (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") RETURNING %s"
 
-        print(qry)
+
         self.cur.execute(qry, \
             [AsIs(self.table)] + \
             [ str(field['value']) for field in ae_fields ] + \
-            ( [AsIs(self.primary_key),AsIs(self.pkv)] if self.pkv else [] ) \
+            ( [AsIs(self.primary_key),AsIs(self.pkv)] if self.pkv else [] ) + \
+            [AsIs(self.primary_key)] \
         )
-        print(self.cur.query)
+
+        self.last_id = self.cur.fetchone()[0]
+        setattr(self, self.primary_key, self.last_id)
+        setattr(self, 'pkv', self.last_id)
         self.conn.commit()
+
+
+    def delete(self,*args):
+        '''
+        Accept an id of a list of ids to delete
+        '''
+        # If arguments are sent, delete those
+        if args:
+            for arg in args:
+                if type(arg) == int:
+                    ids = [id]
+                if type(arg) == list:
+                    ids = args
+        elif self.__dict__[self.primary_key] != None and type(self.__dict__[self.primary_key]) == int :
+            ids = [self.__dict__[self.primary_key]]
+        else:
+            print("[DELETE] - No arguments were sent ")
+            return False
+
+        self.cur.execute(
+            """
+            DELETE FROM %s WHERE %s IN ( """ + [ "%s" for i in range(0,len(ids)) ] + """" )
+            """,
+            [ AsIs(self.table), AsIs(self.primary_key) ] + \
+            ids
+        )
+        self.conn.commit()
+
+
+
+    def get(self,*args):
+        '''
+        Get row values, given the id of the row of with the primary
+        key value property.
+        '''
+        if len(args) <= 0:
+            if not self.pkv:
+                return False
+            pkv = self.pkv
+        else:
+            pkv = args[0]
+        rows = self.pygres.query(
+            """
+            SELECT * FROM %s WHERE %s = %s
+            """,
+            (AsIs(self.table),AsIs(self.primary_key),pkv)
+        ).fetch()
+        if rows == None:
+            return []
+        # Instantiate values
+        for k,v in rows[0].items():
+            setattr(self,k,v)
+        # Return only first row
+        return rows[0]
+
+
+
+    # Query price table
+    def select(self,fields="*"):
+        self.query['select'] = "select %s from %s " % (fields, self.table)
+        return self
+
+    def where(self,clause):
+        self.query['where'] = clause
+        return self
+
+    def join(self,clause):
+        self.query['join'] = clause
+        return self
+
+    def run(self):
+        '''
+        Build SQL query and fetch rows
+        '''
+        # Build SQL query
+        query = self.qry['select'] if 'select' in self.qry and self.qry['select'] != None else "select * from %s " % self.table
+        query += self.qry['join'] if 'join' in self.qry and  self.qry['join'] != None else ""
+        query += self.qry['where'] if 'where' in self.qry and self.qry['where'] != None else ""
+        query += self.qry['group_by'] if 'group_by' in self.qry and self.qry['group_by'] != None else ""
+        query += self.qry['order_by'] if 'order_by' in self.qry and self.qry['order_by'] != None else ""
+        self.qry = query
+
+        # Query
+        rows = self.pygres.query(self.qry).fetch()
+        self.q = self.pygres.q
+        self.rows = rows
+        return rows
+
+    '''
+    Standalone query - just executes a query
+    '''
+    def query(self,qry,values):
+        self.cur.execute(statement, values)
+        self.qry = self.cur.query
+        return self
+
+    def run(self):
+        pass
