@@ -45,12 +45,28 @@ user.save()
 #### Editing rows
 If you want to edit row, just pass pass the primary key of the row you want to edit and save, set the new values and save
 ```python
-user = db.Model('<table>','<table_pk>')
+user = db.model('<table>','<table_pk>')
 user.id_user = 1
 user.name = "Jane"
 user.age = 27
 user.save()
 ```
+
+#### Rolling back and committing changes
+Changes are auto commited by default while saving, but you can choose not commit an statement and roll it back if necessary:
+```python
+user = db.model('<table>','<table_pk>')
+for i in range(0,3):
+    user.name = "User %s " % (i,)
+    user.age = 10+i
+    user.save(commit=False)
+
+if nothing_happens:
+    user.commit()
+else:
+    user.rollback()
+```
+
 
 #### Querying row
 To query a row form the instanced table that returns a dictionary with the format `{ 'column' : 'value', ... }` justo do:
