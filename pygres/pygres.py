@@ -38,10 +38,19 @@ class Pygres(object):
     def model(self, table, pk, *initial_data,**kwargs):
         return Model(self, table, pk, *initial_data,**kwargs)
 
-    def query(self,statement,values=[]):
+    def query(self,statement,values=[],commit=True):
         self.cur.execute(statement, values)
         self.q = self.cur.query
+        if commit:
+            self.conn.commit()
+        return self
+
+    def commit(self):
         self.conn.commit()
+        return self
+
+    def rollback(self):
+        self.conn.rollback()
         return self
 
     def fetch(self):

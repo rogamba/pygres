@@ -76,7 +76,7 @@ class Model(object):
         return values
 
     # If the primary key is set, make an update
-    def save(self):
+    def save(self,commit=True):
         # Insert or update only to the columns that have some value
         ae_fields = []
         for attr, val in self.__dict__.items():
@@ -111,8 +111,18 @@ class Model(object):
         self.last_id = self.cur.fetchone()[0]
         setattr(self, self.primary_key, self.last_id)
         setattr(self, 'pkv', self.last_id)
-        self.conn.commit()
+        # If commit parameter is false, do not commit
+        if commit:
+            print("Entered commit")
+            self.conn.commit()
 
+    # Execute commit statement
+    def commit(self):
+        self.pygres.commit()
+
+    # Rollback changes
+    def rollback(self):
+        self.pygres.rollback()
 
     def delete(self,*args):
         '''
@@ -133,7 +143,7 @@ class Model(object):
 
         self.cur.execute(
             """
-            DELETE FROM %s WHERE %s IN ( """ + [ "%s" for i in range(0,len(ids)) ] + """" )
+            DELETE FROM %s WHERE %s IN ( """ + ", ".join([ "%s" for i in range(0,len(ids)) ]) + """ )
             """,
             [ AsIs(self.table), AsIs(self.primary_key) ] + \
             ids

@@ -14,6 +14,13 @@ config = dict(
 # Testeamos la instancia de pygres
 db = Pygres(config)
 
+# Clean DB
+db.query(
+    """
+    DELETE FROM test
+    """
+)
+
 # Testeamos la asignación de los valores
 test = db.model('test','id_test')
 
@@ -45,9 +52,29 @@ test2 = db.model('test','id_test')
 test2.get(last_id)
 print(test2.values)
 
+# Test not commit
+print("----------- Insert 3, do not commit")
+for i in range(0,2):
+    test3 = db.model('test','id_test')
+    test3.name = 'Testing uncommited row %s ' % (i,)
+    test3.value = 'Uncommited row %s ' % (i,)
+    test3.date = datetime.utcnow()
+    test3.save(commit=False)
+test3.rollback()
+
+print("----------- Insert 3, commit!")
+for i in range(0,5):
+    test3 = db.model('test','id_test')
+    test3.name = 'Testing commited row %s ' % (i,)
+    test3.value = 'Commited row %s ' % (i,)
+    test3.date = datetime.utcnow()
+    test3.save()
+test3.commit()
+
+print("----------- Delete last record: %s " % test3.last_id)
+test4 = db.model('test','id_test')
+test4.id_test = test3.last_id
+test4.delete()
+
+
 db.close()
-
-
-# Testeamos nueva instancia del elemento
-
-# Testeamos el borrar el elemento
