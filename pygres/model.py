@@ -76,7 +76,7 @@ class Model(object):
         return values
 
     # If the primary key is set, make an update
-    def save(self,commit=True):
+    def save(self,commit=True,clear=True):
         # Insert or update only to the columns that have some value
         ae_fields = []
         for attr, val in self.__dict__.items():
@@ -100,7 +100,6 @@ class Model(object):
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
             qry = "INSERT INTO %s ("+ qry_fields +") VALUES (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") RETURNING %s"
 
-
         self.cur.execute(qry, \
             [AsIs(self.table)] + \
             [ str(field['value']) for field in ae_fields ] + \
@@ -113,8 +112,17 @@ class Model(object):
         setattr(self, 'pkv', self.last_id)
         # If commit parameter is false, do not commit
         if commit:
-            print("Entered commit")
             self.conn.commit()
+        # clear attributes
+        if clear:
+            self.clear()
+
+    def clear(self):
+        ''' Clear column attributes from instance
+        '''
+        self.pkv = None
+        for col in self.columns:
+            setattr(self, col, None)
 
     # Execute commit statement
     def commit(self):
@@ -148,6 +156,7 @@ class Model(object):
             [ AsIs(self.table), AsIs(self.primary_key) ] + \
             ids
         )
+        self.clear()
         self.conn.commit()
 
 

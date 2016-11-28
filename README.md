@@ -67,6 +67,18 @@ else:
     user.rollback()
 ```
 
+#### Not clearing at save / edit
+You can choose not to clear the instance object when inserting or updating, this will make the object to keep the list of attributes
+as the last element saved.  
+This will only insert a record and modify the same record two times:
+```python
+user = db.model('<table>','<table_pk>')
+for i in range(0,3):
+    user.name = "User %s " % (i,)
+    user.age = 10+i
+    user.save(clear=False)
+```
+
 
 #### Querying row
 To query a row form the instanced table that returns a dictionary with the format `{ 'column' : 'value', ... }` justo do:

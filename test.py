@@ -30,6 +30,7 @@ test.name = 'Testing row'
 test.value = 'Testing value'
 test.date = datetime.utcnow()
 print(test.values)
+# you can send the parameter clear=False if you want the object to keep populates
 test.save()
 
 # Testeamos modificar el elemento
@@ -37,7 +38,7 @@ print("--------- Updating data...")
 print(test.values)
 test.id_test = test.last_id
 test.name ='Modified testing name'
-test.save()
+test.save(clear=False)
 last_id = test.last_id
 print(test.values)
 
@@ -54,8 +55,9 @@ print(test2.values)
 
 # Test not commit
 print("----------- Insert 3, do not commit")
+test3 = db.model('test','id_test')
 for i in range(0,2):
-    test3 = db.model('test','id_test')
+    print("entered loop")
     test3.name = 'Testing uncommited row %s ' % (i,)
     test3.value = 'Uncommited row %s ' % (i,)
     test3.date = datetime.utcnow()
@@ -63,18 +65,27 @@ for i in range(0,2):
 test3.rollback()
 
 print("----------- Insert 3, commit!")
+test3 = db.model('test','id_test')
 for i in range(0,5):
-    test3 = db.model('test','id_test')
     test3.name = 'Testing commited row %s ' % (i,)
     test3.value = 'Commited row %s ' % (i,)
     test3.date = datetime.utcnow()
     test3.save()
 test3.commit()
 
-print("----------- Delete last record: %s " % test3.last_id)
+print("----------- Not clearing the instance, only changes will be applied to the same row")
 test4 = db.model('test','id_test')
-test4.id_test = test3.last_id
-test4.delete()
+for i in range(0,3):
+    test4.name = 'Testing not clearing at save - change %s ' % (i,)
+    test4.value = 'Uncleared row - change %s ' % (i,)
+    test4.date = datetime.utcnow()
+    test4.save(clear=False)
+test4.commit()
+
+print("----------- Delete last record: %s " % test3.last_id)
+test5 = db.model('test','id_test')
+test5.id_test = test3.last_id
+test5.delete()
 
 
 db.close()
