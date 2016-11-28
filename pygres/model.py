@@ -192,6 +192,14 @@ class Model(object):
         self.query['join'] = clause
         return self
 
+    def group_by(self,clause):
+        self.query['limit'] = clause
+        return self
+
+    def order_by(self,clause):
+        self.query['order_by'] = clause
+        return self
+
     def run(self):
         '''
         Build SQL query and fetch rows
@@ -202,6 +210,7 @@ class Model(object):
         query += self.qry['where'] if 'where' in self.qry and self.qry['where'] != None else ""
         query += self.qry['group_by'] if 'group_by' in self.qry and self.qry['group_by'] != None else ""
         query += self.qry['order_by'] if 'order_by' in self.qry and self.qry['order_by'] != None else ""
+        query += self.qry['limit'] if 'limit' in self.qry and self.qry['limit'] != None else ""
         self.qry = query
 
         # Query
