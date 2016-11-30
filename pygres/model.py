@@ -38,7 +38,7 @@ class Model(object):
         self.table = table
         self.primary_key = pk
 
-        self.cur.execute('SELECT * FROM "'+ self.table +'" LIMIT 0',(self.table,))
+        self.cur.execute('SELECT * FROM "' + self.table + '" LIMIT 0',(self.table,))
         self.columns = [desc[0] for desc in self.cur.description]
 
         # Alias
@@ -209,8 +209,8 @@ class Model(object):
             return []
 
         self.clear()
+        self.rows = rows
         if len(rows) > 1:
-            self.rows = rows
             ret = rows
         else:
             ret = rows[0]
@@ -248,7 +248,7 @@ class Model(object):
         Build SQL query and fetch rows
         '''
         # Build SQL query
-        query = self.qry['select'] if 'select' in self.qry and self.qry['select'] != None else "select * from %s " % self.table
+        query = self.qry['select'] if 'select' in self.qry and self.qry['select'] != None else 'select * from "%s" ' % self.table
         query += self.qry['join'] if 'join' in self.qry and  self.qry['join'] != None else ""
         query += self.qry['where'] if 'where' in self.qry and self.qry['where'] != None else ""
         query += self.qry['group_by'] if 'group_by' in self.qry and self.qry['group_by'] != None else ""
