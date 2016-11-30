@@ -160,7 +160,6 @@ class Model(object):
         self.conn.commit()
 
 
-
     def get(self,*args):
         '''
         Get row values, given the id of the row of with the primary
@@ -186,6 +185,41 @@ class Model(object):
         # Return only first row
         return rows[0]
 
+
+    def find_by(self,**kwargs):
+        ''' Get row values, given one or more variables.
+            It can only return one row
+        '''
+        if kwargs is None or len(kwargs) <= 0:
+            print("Cannot find row without arguments and values")
+            return False
+        combined = []
+        for key, value in kwargs.items():
+            combined.append(AsIs(key))
+            combined.append(value)
+        # Statement
+        rows = self.pygres.query(
+            """
+            SELECT * FROM %s WHERE ("""+  ' AND '.join( [ "%s=%s" for i in range(0,len(kwargs)) ] )  +""")
+            """,
+            [ AsIs(self.table) ] + \
+            combined \
+        ).fetch()
+        if rows == None:
+            return []
+
+        self.clear()
+        if len(rows) > 1:
+            self.rows = rows
+            ret = rows
+        else:
+            ret = rows[0]
+            # Instantiate values of the first row
+            for k,v in rows[0].items():
+                setattr(self,k,v)
+
+        # Return only first row
+        return ret
 
 
     # Query price table
