@@ -38,7 +38,7 @@ class Model(object):
         self.table = table
         self.primary_key = pk
 
-        self.cur.execute('SELECT * FROM '+ self.table +' LIMIT 0',(self.table,))
+        self.cur.execute('SELECT * FROM "'+ self.table +'" LIMIT 0',(self.table,))
         self.columns = [desc[0] for desc in self.cur.description]
 
         # Alias
@@ -93,12 +93,12 @@ class Model(object):
             # Build update query
             qry_fields = ", ".join([ field['column'] for field in ae_fields ])
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = "UPDATE  %s SET ("+ qry_fields +") = (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") WHERE %s = %s RETURNING %s"
+            qry = 'UPDATE  "%s" SET ('+ qry_fields +') = (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') WHERE %s = %s RETURNING %s'
         else:
             # Build insert query
             qry_fields = ", ".join([ field['column'] for field in ae_fields ])
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = "INSERT INTO %s ("+ qry_fields +") VALUES (" + ", ".join([ "%s" for i in range(0,len(ae_fields)) ]) + ") RETURNING %s"
+            qry = 'INSERT INTO "%s" ('+ qry_fields +') VALUES (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') RETURNING %s'
 
         self.cur.execute(qry, \
             [AsIs(self.table)] + \
@@ -151,7 +151,7 @@ class Model(object):
 
         self.cur.execute(
             """
-            DELETE FROM %s WHERE %s IN ( """ + ", ".join([ "%s" for i in range(0,len(ids)) ]) + """ )
+            DELETE FROM "%s" WHERE %s IN ( """ + ", ".join([ "%s" for i in range(0,len(ids)) ]) + """ )
             """,
             [ AsIs(self.table), AsIs(self.primary_key) ] + \
             ids
@@ -173,7 +173,7 @@ class Model(object):
             pkv = args[0]
         rows = self.pygres.query(
             """
-            SELECT * FROM %s WHERE %s = %s
+            SELECT * FROM "%s" WHERE %s = %s
             """,
             (AsIs(self.table),AsIs(self.primary_key),pkv)
         ).fetch()
@@ -200,7 +200,7 @@ class Model(object):
         # Statement
         rows = self.pygres.query(
             """
-            SELECT * FROM %s WHERE ("""+  ' AND '.join( [ "%s=%s" for i in range(0,len(kwargs)) ] )  +""")
+            SELECT * FROM "%s" WHERE ("""+  ' AND '.join( [ "%s=%s" for i in range(0,len(kwargs)) ] )  +""")
             """,
             [ AsIs(self.table) ] + \
             combined \
@@ -224,7 +224,7 @@ class Model(object):
 
     # Query price table
     def select(self,fields="*"):
-        self.query['select'] = "select %s from %s " % (fields, self.table)
+        self.query['select'] = 'select %s from "%s" ' % (fields, self.table)
         return self
 
     def where(self,clause):
