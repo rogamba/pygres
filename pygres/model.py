@@ -205,7 +205,7 @@ class Model(object):
             [ AsIs(self.table) ] + \
             combined \
         ).fetch()
-        if rows == None:
+        if rows == None or len(rows) <= 0:
             return []
 
         self.clear()

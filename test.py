@@ -86,6 +86,11 @@ print("\n----------- Testing finding one row by multiple attributes")
 test5 = db.model('test','id_test')
 test5.find_by(name='Modified testing name',value='Testing value')
 print(test5.values)
+print("\n----------- Testing not finding values by key")
+test5 = db.model('test','id_test')
+test5.find_by(value='Non existent')
+print(test5.values)
+
 
 print("\n----------- Testing finding multiple row by multiple attributes")
 test5.clear()
