@@ -86,10 +86,12 @@ class Model(object):
                 'column' : attr,
                 'value' : val
             })
+
         # If primary key is set, update else insert
         if self.__dict__[self.primary_key] != None and type(self.__dict__[self.primary_key]) == int:
             # Set primary key value
             self.pkv =  self.__dict__[self.primary_key]
+            # Check if record exists... ??
             # Build update query
             qry_fields = ", ".join([ field['column'] for field in ae_fields ])
             qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
@@ -106,6 +108,7 @@ class Model(object):
             ( [AsIs(self.primary_key),AsIs(self.pkv)] if self.pkv else [] ) + \
             [AsIs(self.primary_key)] \
         )
+
 
         self.last_id = self.cur.fetchone()[0]
         setattr(self, self.primary_key, self.last_id)

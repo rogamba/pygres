@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from .errors import PygresError
 from .model import Model
 
@@ -11,8 +12,10 @@ class Pygres(object):
     config = None
     q = None
 
-    def __init__(self, config):
+    def __init__(self, config, **kwargs):
         self.config = config
+        # Kwargs
+        self.autocommit = kwargs.get('autocommit', False)
         #global conn
         #global cur
         if not self.config:
@@ -26,6 +29,9 @@ class Pygres(object):
                 host=self.config['SQL_HOST'],
                 port=self.config['SQL_PORT']
             )
+            # Isolation level, connection with autocommit
+            if self.autocommit:
+                self.con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             # Cursor
             self.cur = self.conn.cursor()
         except:

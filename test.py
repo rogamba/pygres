@@ -33,6 +33,16 @@ print(test.values)
 # you can send the parameter clear=False if you want the object to keep populates
 test.save()
 
+# Testeamos savlar un nuevo elemento
+#print("--------- Saving data defining primary_key...")
+#test.id_test = 100
+#test.name = 'Testing row defininf pk'
+#test.value = 'Testing value defining pk'
+#test.date = datetime.utcnow()
+#print(test.values)
+# you can send the parameter clear=False if you want the object to keep populates
+#test.save()
+
 # Testeamos modificar el elemento
 print("\n--------- Updating data...")
 print(test.values)
