@@ -31,7 +31,7 @@ class Pygres(object):
             )
             # Isolation level, connection with autocommit
             if self.autocommit:
-                self.con.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+                self.conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
             # Cursor
             self.cur = self.conn.cursor()
         except:
