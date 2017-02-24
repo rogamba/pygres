@@ -2,27 +2,57 @@
 from pygres import Pygres
 from datetime import datetime
 
-# SQL Alchemy
-config = dict(
-    SQL_HOST = '127.0.0.1',
-    SQL_DB = 'demo',
-    SQL_USER = 'postgres',
-    SQL_PASSWORD =  '',
-    SQL_PORT="5432",
-)
+try:
+    # Create Database
+    db_init = Pygres(dict(
+        SQL_DB='postgres',
+        SQL_USER='postgres',
+        SQL_PASSWORD='',
+        SQL_HOST='127.0.0.1',
+        SQL_PORT='5432'
+    ),autocommit=True)
+    db_init.query('create database pygres_test')
+    db_init.close()
+except:
+    pass
 
-# Testeamos la instancia de pygres
+# Connect to database
+config = dict(
+    SQL_DB='pygres_test',
+    SQL_USER='postgres',
+    SQL_PASSWORD='',
+    SQL_HOST='127.0.0.1',
+    SQL_PORT='5432'
+)
 db = Pygres(config)
+try:
+    db.query("create extension pgcrypto")
+except:
+    pass
 
 # Clean DB
-db.query(
-    """
-    DELETE FROM test
-    """
-)
+db.rollback()
+db.query("""drop table test""")
+db.query("""drop table test_uuid""")
+# Create normal table
+db.query("""create table test (
+            id_test serial primary key not null,
+            name varchar(255),
+            value varchar(255),
+            text text,
+            date timestamp)""")
+db.query("""create table test_uuid (
+            uuid_test uuid primary key default gen_random_uuid(),
+            name varchar(255),
+            value varchar(255),
+            text text,
+            date timestamp)""")
+
+
 
 # Testeamos la asignación de los valores
 test = db.model('test','id_test')
+test_uuid = db.model('test_uuid','uuid_test')
 
 # Testeamos savlar un nuevo elemento
 print("--------- Saving data...")
@@ -34,14 +64,26 @@ print(test.values)
 test.save()
 
 # Testeamos savlar un nuevo elemento
-#print("--------- Saving data defining primary_key...")
-#test.id_test = 100
-#test.name = 'Testing row defininf pk'
-#test.value = 'Testing value defining pk'
-#test.date = datetime.utcnow()
-#print(test.values)
+print("--------- Saving data defining primary_key...")
+test.id_test = 100
+test.name = 'Testing row defininf pk'
+test.value = 'Testing value defining pk'
+test.date = datetime.utcnow()
+print(test.values)
 # you can send the parameter clear=False if you want the object to keep populates
-#test.save()
+test.insert()
+
+
+# Testeamos savlar un nuevo elemento
+print("--------- Saving data defining NOT primary_key...")
+test_uuid.name = 'Testing row defininf pk'
+test_uuid.value = 'Testing value defining pk'
+test_uuid.date = datetime.utcnow()
+# you can send the parameter clear=False if you want the object to keep populates
+print(test_uuid.values)
+test_uuid.insert()
+print(test_uuid.last_id)
+
 
 # Testeamos modificar el elemento
 print("\n--------- Updating data...")
@@ -51,6 +93,16 @@ test.name ='Modified testing name'
 test.save(clear=False)
 last_id = test.last_id
 print(test.values)
+
+
+# Test specific queries
+print("\n---------- Getting values...")
+last_id = test.last_id
+test2 = db.model('test','id_test')
+test2.get(last_id)
+print(test2.values)
+
+
 
 # Test general queries
 tests = db.query("SELECT * FROM test").fetch()
