@@ -109,6 +109,7 @@ class Model(object):
             [AsIs(self.primary_key)] \
         )
 
+
         self.last_id = self.cur.fetchone()[0]
         setattr(self, self.primary_key, self.last_id)
         setattr(self, 'pkv', self.last_id)
@@ -118,42 +119,6 @@ class Model(object):
         # clear attributes
         if clear:
             self.clear()
-
-
-
-    def insert(self,commit=True,clear=True):
-        ''' Always insert  in table, must have primary key
-        '''
-        # Insert or update only to the columns that have some value
-        ae_fields = []
-        for attr, val in self.__dict__.items():
-            if attr not in self.columns or val == None:
-                continue
-            ae_fields.append({
-                'column' : attr,
-                'value' : val
-            })
-
-        # Generate of not generate primary key value
-        qry_fields = ", ".join([ field['column'] for field in ae_fields ])
-        qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-        qry = 'INSERT INTO "%s" ('+ qry_fields +') VALUES (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') RETURNING %s'
-
-        self.cur.execute(qry, \
-            [AsIs(self.table)] + \
-            [ str(field['value']) for field in ae_fields ] + \
-            [AsIs(self.primary_key)] \
-        )
-        self.last_id = self.cur.fetchone()[0]
-        setattr(self, self.primary_key, self.last_id)
-        setattr(self, 'pkv', self.last_id)
-        # If commit parameter is false, do not commit
-        if commit:
-            self.conn.commit()
-        # clear attributes
-        if clear:
-            self.clear()
-
 
     def clear(self):
         ''' Clear column attributes from instance
