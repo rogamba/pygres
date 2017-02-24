@@ -10,6 +10,6 @@
     :copyright: (c) 2016 by Rodrigo Gamba
 """
 
-__version__ = '1.2.6'
+__version__ = '1.2.7'
 
 from .pygres import Pygres
