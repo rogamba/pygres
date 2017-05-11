@@ -215,7 +215,7 @@ class Model(object):
             """,
             (AsIs(self.table),AsIs(self.primary_key),pkv)
         ).fetch()
-        if rows == None or len(rows) == 0:
+        if rows == None:
             return []
         # Instantiate values
         for k,v in rows[0].items():
