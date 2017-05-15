@@ -1,5 +1,6 @@
 from setuptools import setup
 
+
 setup(
     name = 'pygres',
     packages = ['pygres'], # this must be the same as the name above
