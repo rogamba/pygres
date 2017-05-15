@@ -87,25 +87,24 @@ class Model(object):
                 'value' : val
             })
 
-        # If primary key is set, update else insert
-        if self.__dict__[self.primary_key] != None and type(self.__dict__[self.primary_key]) == int:
+        # Insert by default, unless a row exists in the db with the same pk value
+        qry_fields = ", ".join([ field['column'] for field in ae_fields ])
+        qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
+        qry = 'INSERT INTO "%s" ('+ qry_fields +') VALUES (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') RETURNING %s'
+        # If primary key is set, check if we need to update or insert
+        if self.__dict__[self.primary_key] != None:
             # Set primary key value
             self.pkv =  self.__dict__[self.primary_key]
-            # Check if record exists... ??
-            # Build update query
-            qry_fields = ", ".join([ field['column'] for field in ae_fields ])
-            qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = 'UPDATE  "%s" SET ('+ qry_fields +') = (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') WHERE %s = %s RETURNING %s'
-        else:
-            # Build insert query
-            qry_fields = ", ".join([ field['column'] for field in ae_fields ])
-            qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
-            qry = 'INSERT INTO "%s" ('+ qry_fields +') VALUES (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') RETURNING %s'
+            # Check if record exists in the db
+            self.cur.execute('SELECT * FROM "%s" WHERE %s = %s LIMIT 1 ', [AsIs(self.table),AsIs(self.primary_key),self.pkv])
+            rc = self.cur.rowcount
+            if rc > 0:
+                qry = 'UPDATE  "%s" SET ('+ qry_fields +') = (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') WHERE %s = %s RETURNING %s'
 
         self.cur.execute(qry, \
             [AsIs(self.table)] + \
             [ str(field['value']) for field in ae_fields ] + \
-            ( [AsIs(self.primary_key),AsIs(self.pkv)] if self.pkv else [] ) + \
+            ( [AsIs(self.primary_key),self.pkv] if qry.split(" ")[0] == 'UPDATE' else [] ) + \
             [AsIs(self.primary_key)] \
         )
 
@@ -215,8 +214,8 @@ class Model(object):
             """,
             (AsIs(self.table),AsIs(self.primary_key),pkv)
         ).fetch()
-        if rows == None:
-            return []
+        if rows == None or len(rows) <= 0:
+            return None
         # Instantiate values
         for k,v in rows[0].items():
             setattr(self,k,v)
