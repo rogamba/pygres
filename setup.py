@@ -3,8 +3,8 @@ from setuptools import setup
 setup(
     name = 'pygres',
     packages = ['pygres'], # this must be the same as the name above
-    version = '1.2.7',
-    description = 'Postgres simple driver',
+    version = '1.3',
+    description = 'Postgres simple connector',
     author = 'Rodrigo Gamba',
     author_email = 'gamba.lavin@gmail.com',
     url = 'https://github.com/rogamba/pygres', # use the URL to the github repo
