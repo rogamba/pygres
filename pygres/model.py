@@ -89,7 +89,7 @@ class Model(object):
 
         # Insert by default, unless a row exists in the db with the same pk value
         qry_fields = ", ".join([ field['column'] for field in ae_fields ])
-        qry_values = ", ".join([ str(field['value']) for field in ae_fields ])
+        qry_values = ", ".join([ str(field['value']) if type(field['value']) != dict else json.dumps(field['value']) for field in ae_fields  ])
         qry = 'INSERT INTO "%s" ('+ qry_fields +') VALUES (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') RETURNING %s'
         # If primary key is set, check if we need to update or insert
         if self.__dict__[self.primary_key] != None:
