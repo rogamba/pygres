@@ -103,7 +103,7 @@ class Model(object):
 
         self.cur.execute(qry, \
             [AsIs(self.table)] + \
-            [ str(field['value']) for field in ae_fields ] + \
+            [ str(field['value']) if type(field['value']) != dict else json.dumps(field['value']) for field in ae_fields ] + \
             ( [AsIs(self.primary_key),self.pkv] if qry.split(" ")[0] == 'UPDATE' else [] ) + \
             [AsIs(self.primary_key)] \
         )
