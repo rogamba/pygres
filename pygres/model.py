@@ -1,7 +1,6 @@
 #-*- coding: utf-8 -*-
 import datetime
 from psycopg2.extensions import AsIs
-import json
 
 '''
 Pgres table model, references a row in the reference table
