@@ -4,7 +4,7 @@ from setuptools import setup
 setup(
     name = 'pygres',
     packages = ['pygres'], # this must be the same as the name above
-    version = '1.3.2',
+    version = '1.3.3',
     description = 'Postgres simple connector',
     author = 'Rodrigo Gamba',
     author_email = 'gamba.lavin@gmail.com',
