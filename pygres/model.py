@@ -2,6 +2,7 @@
 import datetime
 from psycopg2.extensions import AsIs
 import json
+from .errors import PygresError
 
 '''
 Pgres table model, references a row in the reference table
@@ -97,21 +98,22 @@ class Model(object):
             # Set primary key value
             self.pkv =  self.__dict__[self.primary_key]
             # Check if record exists in the db
-            self.cur.execute('SELECT * FROM "%s" WHERE %s = %s LIMIT 1 ', [AsIs(self.table),AsIs(self.primary_key),self.pkv])
+            self.cur.execute('SELECT 1 FROM "%s" WHERE %s = %s LIMIT 1 ', [AsIs(self.table),AsIs(self.primary_key),self.pkv])
             rc = self.cur.rowcount
             if rc > 0:
                 qry = 'UPDATE  "%s" SET ('+ qry_fields +') = (' + ', '.join([ '%s' for i in range(0,len(ae_fields)) ]) + ') WHERE %s = %s RETURNING %s'
-
-        self.cur.execute(qry, \
-            [AsIs(self.table)] + \
-            [ str(field['value']) if type(field['value']) != dict else json.dumps(field['value']) for field in ae_fields ] + \
-            ( [AsIs(self.primary_key),self.pkv] if qry.split(" ")[0] == 'UPDATE' else [] ) + \
-            [AsIs(self.primary_key)] \
-        )
-
-        self.last_id = self.cur.fetchone()[0]
-        setattr(self, self.primary_key, self.last_id)
-        setattr(self, 'pkv', self.last_id)
+        try:
+            self.cur.execute(qry, \
+                [AsIs(self.table)] + \
+                [ str(field['value']) if type(field['value']) != dict else json.dumps(field['value']) for field in ae_fields ] + \
+                ( [AsIs(self.primary_key),self.pkv] if qry.split(" ")[0] == 'UPDATE' else [] ) + \
+                [AsIs(self.primary_key)] \
+            )
+            self.last_id = self.cur.fetchone()[0]
+            setattr(self, self.primary_key, self.last_id)
+            setattr(self, 'pkv', self.last_id)
+        except Exception as e:
+            self.last_id = None
         # If commit parameter is false, do not commit
         if commit:
             self.conn.commit()
@@ -119,7 +121,37 @@ class Model(object):
         if clear:
             self.clear()
 
+    def load_batch(self, elems, force=False):
+        ''' Batch load elements from list
 
+            Params:
+            -----
+            elems: list
+                Dictionaries with Model schema
+            force : bool, default=False
+                If True: Apply Batch load even when some failed
+            
+            Returns:
+            -----
+            _upd_pkeys : list
+                List of Loaded Primary Keys
+        '''
+        # Acumulate PKeys uploaded in Batch
+        _upd_pkeys = []
+        # Update and save values for each element
+        for _j, _el in enumerate(elems):
+            self.__dict__.update(_el)
+            _cit = False if _j < (len(elems)-1) else True  # Apply commit only for last element
+            self.save(commit=_cit)
+            if self.last_id:
+                _upd_pkeys.append(self.last_id)
+        if (len(elems) != len(_upd_pkeys)) and not force:
+            self.rollback()
+            raise PygresError("Unsuccessful Batch Load",
+                            "Only {} elements loaded from {}".format(len(_upd_pkeys), len(elems)))
+        # Returned all updated pkeys
+        return _upd_pkeys
+        
 
     def insert(self,commit=True,clear=True):
         ''' Always insert  in table, must have primary key
@@ -307,6 +339,3 @@ class Model(object):
         self.cur.execute(statement, values)
         self.qry = self.cur.query
         return self
-
-    def run(self):
-        pass

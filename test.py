@@ -7,7 +7,7 @@ try:
     db_init = Pygres(dict(
         SQL_DB='postgres',
         SQL_USER='postgres',
-        SQL_PASSWORD='',
+        SQL_PASSWORD='postgres',
         SQL_HOST='127.0.0.1',
         SQL_PORT='5432'
     ),autocommit=True)
@@ -20,7 +20,7 @@ except:
 config = dict(
     SQL_DB='pygres_test',
     SQL_USER='postgres',
-    SQL_PASSWORD='',
+    SQL_PASSWORD='postgres',
     SQL_HOST='127.0.0.1',
     SQL_PORT='5432'
 )
@@ -32,8 +32,8 @@ except:
 
 # Clean DB
 db.rollback()
-db.query("""drop table test""")
-db.query("""drop table test_uuid""")
+db.query("""drop table if exists test""")
+db.query("""drop table if exists test_uuid""")
 # Create normal table
 db.query("""create table test (
             id_test serial primary key not null,
@@ -165,5 +165,10 @@ test5 = db.model('test','id_test')
 test5.id_test = test3.last_id
 test5.delete()
 
+print("\n----------- Batch Load %s Records " % '150')
+btch = [{'id_test': _i, 'text': "Batch Loaded {}".format(_i)} for _i in range(50, 200)]
+test6 = db.model('test','id_test')
+tpkys = test6.load_batch(btch)
+print(tpkys)
 
 db.close()
