@@ -103,7 +103,6 @@ test2.get(last_id)
 print(test2.values)
 
 
-
 # Test general queries
 tests = db.query("SELECT * FROM test").fetch()
 print(tests)

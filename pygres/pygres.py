@@ -16,8 +16,6 @@ class Pygres(object):
         self.config = config
         # Kwargs
         self.autocommit = kwargs.get('autocommit', False)
-        #global conn
-        #global cur
         if not self.config:
             raise Pygres("Configuration variables missing",'Missing vars in config')
         # Connection
