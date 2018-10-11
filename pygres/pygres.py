@@ -35,7 +35,7 @@ class Pygres(object):
             # Cursor
             self.cur = self.conn.cursor()
         except:
-            raise PygresError('Couldnt connect to Postgres','Missing')
+            raise PygresError('Couldnt connect to Postgres','Missing parameters')
             sys.exit()
 
     def close(self):
